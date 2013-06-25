@@ -1,12 +1,19 @@
 var redisModule = require('redis');
-var config = require('./config'); // here goes the file containing redis adress
+var port = process.argv[3];
+var host = process.argv[2];
 
-var redisDb = redis.http.createClient(config.port, config.host);
+var redisDb = redis.createClient(port, host);
 
 // Aux functions
 var monitorQueue = function (queue, callback) {
   'use strict';
-  redisDb.llen(queue, function (err ,value) {
+  redisDb.llen('wrL:hpri', function (err ,value) {
     callback(value);
   });
 };
+
+setInterval(function () {
+  monitorQueue(key, function (value) {
+    console.log('Elements in queue: ' + value);
+  });
+}, 500)
