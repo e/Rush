@@ -12,11 +12,21 @@ var monitorQueue = function (queue, callback) {
 };
 
 var qBefore = 0;
+var rateBefore = 0;
+var rate = 0;
+var acceleration = 0;
 
 setInterval(function () {
+  'use strict';
   monitorQueue('wrL:hpri', function (value) {
-    console.log('Transactions handled: ' + Math.abs(qBefore - value));
+    rate = value - qBefore;
+    acceleration = rate - rateBefore;
+    console.log('------------------------------------------------------------------------');
+    console.log('Transactions handled: ' + rate);
+    console.log('Acceleration: ' + acceleration);
     console.log('Total elements in queue: ' + value);
+    console.log('------------------------------------------------------------------------');
     qBefore = value;
+    rateBefore = rate;
   });
-}, 1000)
+}, 500);
