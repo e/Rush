@@ -47,17 +47,17 @@ var monitor = function (pid) {
     startTimeS = getSysUsage();
 
   setTimeout(function (startTimeU, startTimeS) {
-    var cpu_sys, cpu_user, percentage = 0, mem = 0;
+    var cpuSys, cpuUser, percentage = 0, mem = 0;
 
       endTimeU = getUserUsage(pid);
       endTimeS = getSysUsage();
 
       console.log(endTimeS - startTimeS);
-      cpu_sys = endTimeS - startTimeS;
-      cpu_user = endTimeU - startTimeU;
+      cpuSys = endTimeS - startTimeS;
+      cpuUser = endTimeU - startTimeU;
 
       mem += parseInt(getProcMem(pid));
-      percentage += 100 * (cpu_user / cpu_sys);
+      percentage += 100 * (cpuUser / cpuSys);
 
     /*var result = {
       memory:mem,
@@ -72,7 +72,7 @@ var monitor = function (pid) {
 
   }.bind({}, startTimeU, startTimeS), 1000);
 };
-
+º
 setInterval(function () {
   monitor(pid);
 }, 1000);
