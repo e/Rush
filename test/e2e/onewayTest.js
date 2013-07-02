@@ -48,7 +48,7 @@ function executeTest(method, content, done) {
 }
 
 describe('Feature: ONEWAY with HTTP', function() {
-
+	this.timeout(5000);
   afterEach(function() {
     for (var i = 0; i < serversToShutDown.length; i++) {
       try {

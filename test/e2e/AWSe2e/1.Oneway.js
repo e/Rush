@@ -1,309 +1,21 @@
 var should = require('should');
-var superagent = require('superagent');
-var config = require('./config');
 var chai = require('chai');
-var expect = chai.expect;
+var superagent = require('superagent');
+var config = require('./config.js');
+var redis = require('redis');
 var _ = require('underscore');
+var expect = chai.expect;
 
 var HOST = config.rushServer.hostname;
 var PORT = config.rushServer.port;
+
 var RUSHENDPOINT = 'http://' + HOST + ':' + PORT;
 var ENDPOINT = config.externalEndpoint;
-if (!ENDPOINT){
-	ENDPOINT = 'http://www.google.es';
-}
-// Verbose MODE
-var vm = false;
-// Time to wait to check the status of the task
 var TIMEOUT = 100;
 
+// Verbose MODE
+var vm = false;
 
-
-
-describe('Scenario: Basic acceptance tests for Rush as a Service ', function () {
-	if (vm) {
-		console.log('Endpoint to check deployment' , RUSHENDPOINT);
-   	console.log('Target Endpoint' , ENDPOINT);
-	}
-	var ids = [];
-
-
-	describe('/ADD http requests ', function () {
-	this.timeout(5000);
-    describe('with a valid Endpoint and Headers', function () {
-      var agent = superagent.agent();
-
-      it('should accept requests using / POST', function (done) {
-        agent
-            .post(RUSHENDPOINT)
-            .set('X-relayer-host', ENDPOINT)
-		        .send({})
-		        .end(onResponse);
-
-        function onResponse(err, res) {
-          //console.log(agent);
-	        should.not.exist(err);
-          res.headers['x-powered-by'].should.eql('Express');
-          res.headers['content-type'].should.eql('application/json; charset=utf-8');
-          ids.push(res.body['id']);
-          res.should.have.status(200);
-          res.text.should.include('id');
-          return done();
-        }
-      });
-
-      it('should accept requests using / GET', function (done) {
-        agent
-            .get(RUSHENDPOINT)
-            .set('X-relayer-host', ENDPOINT)
-		        .send({})
-            .end(onResponse);
-
-        function onResponse(err, res) {
-          //console.log(agent);
-          should.not.exist(err);
-          res.headers['x-powered-by'].should.eql('Express');
-          res.headers['content-type'].should.eql('application/json; charset=utf-8');
-          ids.push(res.body['id']);
-          res.should.have.status(200);
-          res.text.should.include('id');
-          return done();
-        }
-      });
-
-      it('should accept requests using / PUT', function (done) {
-        agent
-            .put(RUSHENDPOINT)
-            .set('X-relayer-host', ENDPOINT)
-		        .send({})
-            .end(onResponse);
-
-        function onResponse(err, res) {
-          //console.log(agent);
-          should.not.exist(err);
-          res.headers['x-powered-by'].should.eql('Express');
-          res.headers['content-type'].should.eql('application/json; charset=utf-8');
-          ids.push(res.body['id']);
-          res.should.have.status(200);
-          res.text.should.include('id');
-          return done();
-        }
-      });
-
-      it('should accept requests using / OPTIONS', function (done) {
-        agent
-            .options(RUSHENDPOINT)
-            .set('X-relayer-host', ENDPOINT)
-		        .send({})
-            .end(onResponse);
-
-        function onResponse(err, res) {
-          //console.log(agent);
-          should.not.exist(err);
-          res.headers['x-powered-by'].should.eql('Express');
-          res.headers['content-type'].should.eql('application/json; charset=utf-8');
-          ids.push(res.body['id']);
-          res.should.have.status(200);
-          res.text.should.include('id');
-          return done();
-        }
-      });
-
-      it('should accept requests using / TRACE', function (done) {
-        agent
-            .trace(RUSHENDPOINT)
-            .set('X-relayer-host', ENDPOINT)
-		        .send({})
-            .end(onResponse);
-
-        function onResponse(err, res) {
-          //console.log(agent);
-          should.not.exist(err);
-          res.headers['x-powered-by'].should.eql('Express');
-          res.headers['content-type'].should.eql('application/json; charset=utf-8');
-          ids.push(res.body['id']);
-          //console.log(res.body['id']);
-          res.should.have.status(200);
-          res.text.should.include('id');
-          return done();
-        }
-      });
-
-      it('should NOT accept requests using / HEAD', function (done) {
-        agent
-            .head(RUSHENDPOINT)
-            .set('X-relayer-host', ENDPOINT)
-		        .end(onResponse);
-
-        function onResponse(err, res) {
-          //console.log(agent);
-          should.not.exist(err);
-          res.headers['x-powered-by'].should.eql('Express');
-          res.headers['content-type'].should.eql('application/json; charset=utf-8');
-          ids.push(res.body['id']);
-          res.should.have.status(200);
-          res.text.should.not.include('id');
-          return done();
-        }
-      });
-
-    });
-
-  });
-
-
-	describe('/Retrieve processed requests', function () {
-	this.timeout(10000);
-  describe('with valid Endpoint and parameters', function () {
-    var agent = superagent.agent();
-
-    it('should return the completed task using / POST', function (done) {
-      agent
-          .post(RUSHENDPOINT)
-          .set('X-relayer-host', ENDPOINT)
-          .set('X-relayer-persistence', 'BODY')
-		      .send({})
-          .end(onResponse);
-
-      function onResponse(err, res) {
-	      should.not.exist(err);
-	      ids.push(res.body['id']);
-        res.headers['x-powered-by'].should.eql('Express');
-        res.headers['content-type'].should.eql('application/json; charset=utf-8');
-        res.should.have.status(200);
-        res.text.should.include('id');
-        //console.log(res.body['id']);
-        setTimeout(function () {
-          agent
-              .get(RUSHENDPOINT +'/response/' + ids[0])
-              .end(
-              function onResponse2(err2, res2) {
-                //console.log("***CHECK POINT***",res2.body['id'])
-                res2.headers['content-type'].should.eql('application/json; charset=utf-8');
-                res2.should.have.status(200);
-                res2.text.should.include('id');
-                res2.body['topic'].should.eql('undefined');
-
-              });
-          return done();
-        }, TIMEOUT);
-      };
-
-    });
-
-    it('should return the completed task using / GET', function (done) {
-      agent
-          .get(RUSHENDPOINT)
-          .set('X-relayer-host', ENDPOINT)
-          .set('X-relayer-persistence', 'BODY')
-		      .send({})
-          .end(onResponse);
-
-      function onResponse(err, res) {
-        //console.log(agent);
-        should.not.exist(err);
-        ids.push(res.body['id']);
-        res.headers['x-powered-by'].should.eql('Express');
-        res.headers['content-type'].should.eql('application/json; charset=utf-8');
-        res.should.have.status(200);
-        res.text.should.include('id');
-        //console.log(res.body['id']);
-        setTimeout(function () {
-          agent
-              .get(RUSHENDPOINT +'/response/' + ids[0])
-		          .send({})
-              .end(
-              function onResponse2(err2, res2) {
-                //console.log("***CHECK POINT***",res2.body['id'])
-                res2.headers['content-type'].should.eql('application/json; charset=utf-8');
-                res2.should.have.status(200);
-                res2.text.should.include('id');
-                res2.body['topic'].should.eql('undefined');
-
-              });
-          return done();
-        }, TIMEOUT);
-      };
-
-    });
-
-    it('should return the completed task using / PUT', function (done) {
-      agent
-          .put(RUSHENDPOINT)
-          .set('X-relayer-host', ENDPOINT)
-          .set('X-relayer-persistence', 'BODY')
-		      .send({})
-          .end(onResponse);
-
-      function onResponse(err, res) {
-        //console.log(agent);
-        should.not.exist(err);
-        ids.push(res.body['id']);
-        res.headers['x-powered-by'].should.eql('Express');
-        res.headers['content-type'].should.eql('application/json; charset=utf-8');
-        res.should.have.status(200);
-        res.text.should.include('id');
-        //console.log(res.body['id']);
-        setTimeout(function () {
-          agent
-              .get(RUSHENDPOINT +'/response/' + ids[0])
-		          .send({})
-              .end(
-              function onResponse2(err2, res2) {
-                //console.log("***CHECK POINT***",res2.body['id'])
-                res2.headers['content-type'].should.eql('application/json; charset=utf-8');
-                res2.should.have.status(200);
-                res2.text.should.include('id');
-                res2.body['topic'].should.eql('undefined');
-
-              });
-          return done();
-        }, TIMEOUT);
-      };
-
-    });
-
-    it('should return the completed task using / OPTIONS', function (done) {
-      agent
-          .options(RUSHENDPOINT)
-          .set('X-relayer-host', ENDPOINT)
-          .set('X-relayer-persistence', 'BODY')
-		      .send({})
-          .end(onResponse);
-
-      function onResponse(err, res) {
-        //console.log(agent);
-        should.not.exist(err);
-        ids.push(res.body['id']);
-        res.headers['x-powered-by'].should.eql('Express');
-        res.headers['content-type'].should.eql('application/json; charset=utf-8');
-        res.should.have.status(200);
-        res.text.should.include('id');
-        //console.log(res.body['id']);
-        setTimeout(function () {
-          agent
-              .get(RUSHENDPOINT +'/response/' + ids[0])
-		          .send({})
-              .end(
-              function onResponse2(err2, res2) {
-                //console.log("***CHECK POINT***",res2.body['id'])
-                res2.headers['content-type'].should.eql('application/json; charset=utf-8');
-                res2.should.have.status(200);
-                res2.text.should.include('id');
-                res2.body['topic'].should.eql('undefined');
-
-              });
-          return done();
-        }, TIMEOUT);
-      };
-
-    });
-
-  });
-
-	});
-
-});
 
 describe('ACCEPTANCE TESTS: EXTERNAL VALID SCENARIOS [AWS]', function () {
 	this.timeout(5000);
@@ -322,7 +34,7 @@ describe('ACCEPTANCE TESTS: EXTERNAL VALID SCENARIOS [AWS]', function () {
 							expect(res.body).to.exist;
 							expect(res.body.id).to.exist;
 							if (vm) {console.log(res.body);}
-							var transId = res.body.id;
+              var transId = res.body.id;
 							setTimeout(function () {
 								agent
 										.get(RUSHENDPOINT +'/response/' + res.body['id'])
@@ -498,12 +210,12 @@ describe('ACCEPTANCE TESTS: EXTERNAL INVALID SCENARIOS [AWS]', function () {
 			{method: 'GET', headers: {"x-relayer-httpcallback-error" : "AAhttp://noname.com"},
 				name : "Error Callback: Should NOT accept the request and retrieve the completed task"},
 			{method: 'GET', headers: {"x-relayer-retry" : "10a, aa, 30"}, name : "Retry: Should NOT accept the request"}
-			// POSSIBLE ISSUES TO CHECK
-			//	{method: 'GET', headers: {'x-relayer-proxy' : 'aaa://\n'}, name : "Proxy: Should NOT accept the request"},
-			//	{method: 'GET', headers: {'x-relayer-encoding' : 'XXXIOSbase64'}, name : "Encoding: Should NOT accept the request"}
-			//	{method: 'GET', headers: {'x-relayer-topic' : '\n'}, name : "TOPIC: Should NOT accept the request"}
+		// POSSIBLE ISSUES TO CHECK
+		//	{method: 'GET', headers: {'x-relayer-proxy' : 'aaa://\n'}, name : "Proxy: Should NOT accept the request"},
+		//	{method: 'GET', headers: {'x-relayer-encoding' : 'XXXIOSbase64'}, name : "Encoding: Should NOT accept the request"}
+		//	{method: 'GET', headers: {'x-relayer-topic' : '\n'}, name : "TOPIC: Should NOT accept the request"}
 		];
-		for(i=0; i < dataSetGET.length; i++){
+	for(i=0; i < dataSetGET.length; i++){
 			_invalidScenario(dataSetGET[i], i)();  //Launch every test in data set
 		}
 
@@ -512,12 +224,3 @@ describe('ACCEPTANCE TESTS: EXTERNAL INVALID SCENARIOS [AWS]', function () {
 
 
 });
-
-
-
-
-
-
-
-
-

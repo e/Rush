@@ -49,6 +49,7 @@ echo " // Environment CHECKS completed //"
 echo " "
 echo " // Test execution :            // "
 echo " "
-grunt test
+#grunt test
+./checkDeploy.sh
 echo " // Test execution Completed:  // "
 exit
